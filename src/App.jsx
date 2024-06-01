@@ -1,22 +1,58 @@
-import { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Nav from "./components/Nav";
-import viteLogo from "/vite.svg";
-import "./App.css";
-import Header from "./components/Header";
-import Products from "./components/Products";
-import Banner1 from "./components/Banner1";
-import TrendingProjects from "./components/TrendingProjects";
 import { AppContext } from "./context/AppContext";
 import axios from "axios";
-import Banner2 from "./components/Banner2";
 import Newsletter from "./components/Newsletter";
+import Footer from "./components/Footer";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HomePage from "./Pages/HomePage";
-import Footer from "./components/Footer";
 import ProductsPage from "./Pages/ProductsPage";
 import ProductPage from "./Pages/ProductPage";
+
 function App() {
   const [products, setProducts] = useState([]);
+  const [cart, setCart] = useState([]);
+
+  function addToCart(product, addedQuantity) {
+    const checkProductInCart = cart.find((item) => item.id === product.id);
+
+    if (checkProductInCart) {
+      setCart((prevCart) =>
+        prevCart.map((item) =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + addedQuantity }
+            : item
+        )
+      );
+    } else {
+      setCart((prevCart) => [
+        ...prevCart,
+        { ...product, quantity: addedQuantity },
+      ]);
+    }
+  }
+
+  function reduceCartQuantity(product) {
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        (item.id === product.id && item.quantity > 1 ) ? { ...item, quantity: item.quantity - 1 } : item
+      )
+    );
+  }
+
+  function removeFromCart(product){
+    setCart(prevCart => prevCart.filter(item => item.id !== product.id))
+  }
+
+  function cartLength(){
+    let counter = 0
+
+    cart.forEach((item) => {
+     counter += item.quantity
+    })
+
+    return counter
+  }
 
   async function fetchProducts() {
     const { data } = await axios.get(
@@ -24,6 +60,7 @@ function App() {
     );
 
     const productsData = data.data;
+
     setProducts(productsData);
   }
 
@@ -32,20 +69,21 @@ function App() {
   }, []);
 
   return (
-    <AppContext.Provider value={{ products }}>
+    <AppContext.Provider
+      value={{ products, addToCart, cart, reduceCartQuantity, removeFromCart, cartLength }}
+    >
       <Router>
-        <Nav/>
-      
+        <Nav />
         <Routes>
-          <Route path='/' element={<HomePage/>}/>
-          <Route path='/products' element={<ProductsPage/>}/>
-          <Route path="/products/1"element={<ProductPage/>}/>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/products/:id" element={<ProductPage />} />
         </Routes>
-        <Newsletter/>
-        <Footer/>
+        <Newsletter />
+        <Footer />
         {/* <Nav />
-       
-        <Newsletter /> */}
+        <Newsletter />
+        <Footer /> */}
       </Router>
     </AppContext.Provider>
   );
